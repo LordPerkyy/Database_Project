@@ -34,7 +34,7 @@ cd Database_Project
 
 ## 2. Install dependencies
 
-npm install 
+npm install express mysql2 cors bcrypt
 
 ## 3. Setup MySQL Database
 
