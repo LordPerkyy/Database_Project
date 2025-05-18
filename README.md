@@ -29,6 +29,7 @@ npm (comes with Node.js)
 ## 1. Clone repository / download files
 
 git clone https://github.com/LordPerkyy/Database_Project.git
+
 cd Database_Project
 
 ## 2. Install dependencies
@@ -50,10 +51,15 @@ Import the provided sql file into the database.
 Ensure your server.js has the correct MySQL credentials:
 
 const db = mysql.createConnection({
+
   host: 'localhost',
+
   user: 'root', // your MySQL username
+
   password: '', // your MySQL password
+
   database: 'electromart'
+
 });
 
 ## 5. Run the Server (from cmd)
