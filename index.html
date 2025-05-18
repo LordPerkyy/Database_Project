@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>ElectroMart</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+    <div class="container-fluid">
+      <a class="navbar-brand" href="index.html">ElectroMart</a>
+      <div class="d-flex align-items-center ms-auto">
+        <span id="user-greeting" class="text-white me-3"></span>
+        <a href="register.html" id="register-link" class="btn btn-outline-light me-2">Register</a>
+        <a href="login.html" id="login-link" class="btn btn-outline-light me-2">Login</a>
+        <button id="logout-btn" class="btn btn-danger d-none">Logout</button>
+        <a href="cart.html" class="btn btn-outline-primary ms-3">
+          🛒 Cart (<span id="cart-count">0</span>)
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container my-5">
+    <h2 class="mb-4">Browse Products</h2>
+    <div class="mb-3">
+      <label for="category-select" class="form-label">Filter by Category:</label>
+      <select id="category-select" class="form-select" style="max-width: 300px">
+        <option value="">All Categories</option>
+      </select>
+    </div>
+    <div id="product-list" class="row"></div>
+  </div>
+
+  <script>
+    const categorySelect = document.getElementById('category-select');
+    const productList = document.getElementById('product-list');
+
+    function loadProducts(categoryId = '') {
+      const url = categoryId ? `http://localhost:3000/api/products?category=${categoryId}` : 'http://localhost:3000/api/products';
+      fetch(url)
+        .then(res => res.json())
+        .then(products => {
+          productList.innerHTML = '';
+          products.forEach(p => {
+            productList.innerHTML += `
+              <div class="col-md-4">
+                <div class="card mb-4">
+                  <img src="https://via.placeholder.com/300x200" class="card-img-top" alt="${p.name}">
+                  <div class="card-body">
+                    <h5 class="card-title">${p.name}</h5>
+                    <p class="card-text">${p.description}</p>
+                    <p class="card-text fw-bold">$${p.price}</p>
+                    <a href="product.html?id=${p.id}" class="btn btn-primary">View</a>
+                  </div>
+                </div>
+              </div>
+            `;
+          });
+        });
+    }
+
+    function loadCategories() {
+      fetch('http://localhost:3000/api/categories')
+        .then(res => res.json())
+        .then(categories => {
+          categories.forEach(cat => {
+            const option = document.createElement('option');
+            option.value = cat.id;
+            option.textContent = cat.name;
+            categorySelect.appendChild(option);
+          });
+        });
+    }
+
+    categorySelect.addEventListener('change', () => {
+      loadProducts(categorySelect.value);
+    });
+
+    fetch('http://localhost:3000/api/cart')
+      .then(res => res.json())
+      .then(data => {
+        const quantity = data.totalQuantity || 0;
+        document.getElementById('cart-count').textContent = quantity;
+      })
+      .catch(err => {
+        console.error('Failed to load cart quantity:', err);
+        document.getElementById('cart-count').textContent = '0';
+      });
+
+    loadCategories();
+    loadProducts();
+
+    // User session handling
+    const user = JSON.parse(localStorage.getItem('user'));
+    const greeting = document.getElementById('user-greeting');
+    const loginLink = document.getElementById('login-link');
+    const registerLink = document.getElementById('register-link');
+    const logoutBtn = document.getElementById('logout-btn');
+
+    if (user) {
+      greeting.textContent = `👋 Welcome, ${user.username}`;
+      loginLink.classList.add('d-none');
+      registerLink.classList.add('d-none');
+      logoutBtn.classList.remove('d-none');
+
+      logoutBtn.onclick = () => {
+        localStorage.removeItem('user');
+        window.location.reload();
+      };
+    }
+  </script>
+</body>
+</html>

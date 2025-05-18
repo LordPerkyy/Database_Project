@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Shopping Cart</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css">
+</head>
+<body>
+<nav class="navbar navbar-dark bg-dark">
+  <div class="container-fluid">
+    <a class="navbar-brand" href="index.html">ElectroMart</a>
+    <a href="cart.html" class="btn btn-outline-light">
+      🛒 Cart (<span id="cart-count">0</span>)
+    </a>
+    <button id="logout-btn" class="btn btn-outline-light ms-3">Logout</button>
+  </div>
+</nav>
+
+<div class="container mt-5">
+  <h1 class="mb-4 text-center">Shopping Cart</h1>
+  <div id="cart-items"></div>
+  <div id="cart-total" class="mt-4 text-end fw-bold fs-5"></div>
+  <div id="coupon-confirmation" class="mt-3"></div>
+
+  <hr class="my-4">
+
+  <h3 class="text-center">Shipping Address</h3>
+  <form id="order-form" class="mt-3">
+    <div class="mb-3">
+      <label for="address1" class="form-label">Address Line 1</label>
+      <input type="text" class="form-control" id="address1" required>
+    </div>
+    <div class="mb-3">
+      <label for="address2" class="form-label">Address Line 2</label>
+      <input type="text" class="form-control" id="address2">
+    </div>
+    <div class="row">
+      <div class="col-md-4 mb-3">
+        <label for="city" class="form-label">City</label>
+        <input type="text" class="form-control" id="city" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label for="postal" class="form-label">Postal Code</label>
+        <input type="text" class="form-control" id="postal" required>
+      </div>
+      <div class="col-md-4 mb-3">
+        <label for="country" class="form-label">Country</label>
+        <input type="text" class="form-control" id="country" required>
+      </div>
+    </div>
+
+    <div class="mb-3">
+      <label for="shipping-method" class="form-label">Shipping Method</label>
+      <select id="shipping-method" class="form-select" required>
+        <option disabled selected>Select a shipping method</option>
+      </select>
+    </div>
+
+    <div class="mb-3">
+      <label for="coupon" class="form-label">Have a coupon?</label>
+      <div class="input-group">
+        <input type="text" id="coupon" class="form-control" placeholder="Enter coupon code">
+        <button type="button" id="apply-coupon" class="btn btn-outline-primary">Apply</button>
+      </div>
+    </div>
+
+    <div class="text-center">
+      <button type="submit" class="btn btn-success">Place Order</button>
+    </div>
+  </form>
+
+  <div id="confirmation" class="mt-4 text-center"></div>
+</div>
+
+<script>
+const currentUser = JSON.parse(localStorage.getItem('user'));
+const userId = currentUser?.id;
+
+if (!userId) window.location.href = 'login.html';
+
+document.getElementById('logout-btn').addEventListener('click', () => {
+  localStorage.removeItem('user');
+  window.location.href = 'login.html';
+});
+
+let cartItems = [];
+let appliedCoupon = null;
+let shippingCost = 0;
+let shippingMethodId = null;
+
+function calculateSubtotal() {
+  return cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+}
+
+function renderCart() {
+  const container = document.getElementById('cart-items');
+  container.innerHTML = '';
+
+  if (!cartItems.length) {
+    container.innerHTML = '<p>Your cart is empty.</p>';
+    renderTotal(0);
+    return;
+  }
+
+  cartItems.forEach(item => {
+    container.innerHTML += `
+      <div class="card mb-3">
+        <div class="card-body">
+          <h5 class="card-title">${item.name}</h5>
+          <p class="card-text">Quantity: ${item.quantity}</p>
+          <p class="card-text">Price per item: $${item.price}</p>
+          <p class="card-text fw-bold">Subtotal: $${(item.price * item.quantity).toFixed(2)}</p>
+        </div>
+      </div>
+    `;
+  });
+
+  renderTotal(calculateSubtotal());
+}
+
+function renderTotal(subtotal) {
+  const totalDiv = document.getElementById('cart-total');
+  const discountAmount = appliedCoupon ? Number(appliedCoupon.discount) : 0;
+  const total = subtotal + shippingCost - discountAmount;
+
+  totalDiv.innerHTML = `
+    <p>Subtotal: $${subtotal.toFixed(2)}</p>
+    ${discountAmount > 0 ? `<p class="text-success">Coupon Discount: -$${discountAmount.toFixed(2)}</p>` : ''}
+    <p>Shipping: $${shippingCost.toFixed(2)}</p>
+    <h4>Total: $${total.toFixed(2)}</h4>
+  `;
+}
+
+document.getElementById('apply-coupon').onclick = async () => {
+  const code = document.getElementById('coupon').value.trim();
+  const confirmationBox = document.getElementById('coupon-confirmation');
+
+  const res = await fetch(`http://localhost:3000/api/coupons/${code}`);
+  const data = await res.json();
+
+  if (data.valid) {
+    appliedCoupon = data;
+    confirmationBox.innerHTML = `<div class="alert alert-success">✅ Coupon "<strong>${code}</strong>" applied successfully. You saved $${Number(data.discount).toFixed(2)}!</div>`;
+  } else {
+    appliedCoupon = null;
+    confirmationBox.innerHTML = `<div class="alert alert-danger">❌ Invalid or expired coupon code.</div>`;
+  }
+
+  renderTotal(calculateSubtotal());
+};
+
+document.getElementById('order-form').onsubmit = async (e) => {
+  e.preventDefault();
+
+  const address1 = document.getElementById('address1').value;
+  const address2 = document.getElementById('address2').value;
+  const city = document.getElementById('city').value;
+  const postal = document.getElementById('postal').value;
+  const country = document.getElementById('country').value;
+
+  const res = await fetch('http://localhost:3000/api/order', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      address1,
+      address2,
+      city,
+      postal,
+      country,
+      couponCode: appliedCoupon?.code || null,
+      shippingMethodId,
+      userId
+    })
+  });
+
+  const data = await res.json();
+  document.getElementById('confirmation').innerHTML = data.orderId
+    ? `<div class="alert alert-success">Order #${data.orderId} placed successfully!</div>`
+    : `<div class="alert alert-danger">Error: ${data.error || 'Something went wrong'}</div>`;
+};
+
+fetch(`http://localhost:3000/api/cart?userId=${userId}`)
+  .then(res => res.json())
+  .then(data => {
+    cartItems = data.items;
+    document.getElementById('cart-count').textContent = data.totalQuantity || 0;
+    renderCart();
+  });
+
+fetch('http://localhost:3000/api/shipping-methods')
+  .then(res => res.json())
+  .then(methods => {
+    const select = document.getElementById('shipping-method');
+    methods.forEach(method => {
+      const option = document.createElement('option');
+      option.value = method.id;
+      option.textContent = `${method.Name} - $${method.Cost}`;
+      option.dataset.cost = method.Cost;
+      select.appendChild(option);
+    });
+
+    select.addEventListener('change', () => {
+      const selected = select.options[select.selectedIndex];
+      shippingCost = parseFloat(selected.dataset.cost);
+      shippingMethodId = parseInt(selected.value);
+      renderTotal(calculateSubtotal());
+    });
+  });
+</script>
+</body>
+</html>

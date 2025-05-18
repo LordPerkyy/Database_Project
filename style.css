@@ -1,0 +1,21 @@
+body {
+  font-family: Arial, sans-serif;
+  background-color: #f8f9fa;
+}
+
+.container {
+  max-width: 960px;
+}
+
+.card img {
+  height: 200px;
+  object-fit: cover;
+}
+
+.table td, .table th {
+  vertical-align: middle;
+}
+
+form label {
+  font-weight: bold;
+}
