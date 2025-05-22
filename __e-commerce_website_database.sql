@@ -291,7 +291,8 @@ CREATE TABLE `productimages` (
 --
 
 INSERT INTO `productimages` (`ImageID`, `ProductID`, `ImageURL`, `AltText`) VALUES
-(1, 1, 'https://example.com/images/5gphone.jpg', 'SuperTech 5G Phone');
+(1, 1, 'https://www.hp.com/ca-en/shop/Html/Merch/Images/c08895796_1750x1285.jpg', 'OptiTech 27" 4K Monitor'),
+(2, 2, 'https://i.insider.com/6791336d10c98eace913742f?width=1200&format=jpeg', 'SuperTech 5G Phone');
 
 -- --------------------------------------------------------
 
