@@ -57,9 +57,12 @@ fetch(`http://localhost:3000/api/products`)
   .then(res => res.json())
   .then(products => {
     const p = products.find(p => p.id == productId);
+    const img = p.image || 'https://via.placeholder.com/300x200';
+    const alt = p.alt || p.name;
+
     document.getElementById('product-detail').innerHTML = `
       <h2>${p.name}</h2>
-      <img src="https://via.placeholder.com/300x200" alt="${p.name}" class="img-fluid mb-3">
+      <img src="${img}" alt="${alt}" class="img-fluid mb-3" style="max-width: 75%; height: 250px;">
       <p>${p.description}</p>
       <p><strong>Price:</strong> $${p.price}</p>
     `;
